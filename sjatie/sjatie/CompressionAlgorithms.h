@@ -11,7 +11,7 @@ struct CompressionResult {
     bool integrity_ok;
 };
 
-CompressionResult kolesnikov_ñompress(const std::string& input);
+CompressionResult kolesnikov_compress(const std::string& input);
 std::string kolesnikov_decompress(const std::string& compressed);
 
 CompressionResult litvinova_compress(const std::string& input);
