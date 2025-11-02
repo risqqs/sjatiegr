@@ -11,5 +11,14 @@ struct CompressionResult {
     bool integrity_ok;
 };
 
-CompressionResult huffman_kolesnikov(const std::string& input);
-std::string huffman_kolesnikov(const std::string& compressed);
+CompressionResult kolesnikov_ñompress(const std::string& input);
+std::string kolesnikov_decompress(const std::string& compressed);
+
+CompressionResult litvinova_compress(const std::string& input);
+std::string litvinova_decompress(const std::string& compressed);
+
+CompressionResult milyaeva_compress(const std::string& input);
+std::string milyaeva_decompress(const std::string& compressed);
+
+CompressionResult doni_compress(const std::string& input);
+std::string doni_decompress(const std::string& compressed);
