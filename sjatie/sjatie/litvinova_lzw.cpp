@@ -2,10 +2,12 @@
 
 #include <unordered_map>
 #include <sstream>
+#include <vector>
+#include <chrono>
 
 using namespace std;
 
-string litvinova_compress_impl(const string& s) {
+string lzw_compress_str(const string& s) {
     unordered_map<string, int> dict;
     int code = 256;
 
@@ -35,7 +37,7 @@ string litvinova_compress_impl(const string& s) {
     return out.str();
 }
 
-string litvinova_decompress_impl(const string& compressed) {
+string lzw_decompress_str(const string& compressed) {
     stringstream ss(compressed);
     vector<int> codes;
     int num;
@@ -73,11 +75,29 @@ string litvinova_decompress_impl(const string& compressed) {
 }
 
 CompressionResult litvinova_compress(const string& input) {
-    
-    return CompressionResult{};
+    auto start = chrono::high_resolution_clock::now();
+    string compressed = lzw_compress_str(input);
+    auto end = chrono::high_resolution_clock::now();
+    auto comp_time = chrono::duration_cast<chrono::milliseconds>(end - start);
+
+    auto decomp_start = chrono::high_resolution_clock::now();
+    string decompressed = lzw_decompress_str(compressed);
+    auto decomp_end = chrono::high_resolution_clock::now();
+    auto decomp_time = chrono::duration_cast<chrono::milliseconds>(decomp_end - decomp_start);
+
+    CompressionResult r;
+    r.algorithm_name = "LZW";
+    r.original_size = input.size();
+    r.compressed_size = compressed.size();
+    r.compression_ratio = compressed.empty() ? 0.0 : (double)input.size() / compressed.size();
+    r.compression_time_ms = comp_time.count();
+    r.decompression_time_ms = decomp_time.count();
+    r.integrity_ok = (input == decompressed);
+
+    return r;
 }
 
 string litvinova_decompress(const string& compressed) {
     
-    return compressed;
+    return lzw_decompress_str(compressed);
 }
