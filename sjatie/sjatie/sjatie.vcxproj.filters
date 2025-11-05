@@ -18,5 +18,9 @@
     <ClCompile Include="sjatie.cpp">
       <Filter>Исходные файлы</Filter>
     </ClCompile>
+    <ClCompile Include="kolesnikov.cpp">
+      <Filter>Исходные файлы</Filter>
+    </ClCompile>
+    <ClCompile Include="litvinova.cpp" />
   </ItemGroup>
 </Project>

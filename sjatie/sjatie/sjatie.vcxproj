@@ -124,6 +124,7 @@
   </ItemDefinitionGroup>
   <ItemGroup>
     <ClCompile Include="kolesnikov.cpp" />
+    <ClCompile Include="litvinova.cpp" />
     <ClCompile Include="sjatie.cpp" />
   </ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
