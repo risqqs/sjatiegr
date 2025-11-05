@@ -35,6 +35,43 @@ string litvinova_compress_impl(const string& s) {
     return out.str();
 }
 
+string litvinova_decompress_impl(const string& compressed) {
+    stringstream ss(compressed);
+    vector<int> codes;
+    int num;
+    while (ss >> num) {
+        codes.push_back(num);
+    }
+
+    vector<string> dict(256);
+    for (int i = 0; i < 256; i++) {
+        dict[i] = string(1, (char)i);
+    }
+
+    if (codes.empty()) return "";
+
+    string res = dict[codes[0]];
+    string prev = dict[codes[0]];
+
+    for (size_t i = 1; i < codes.size(); i++) {
+        int curr_code = codes[i];
+
+        string curr;
+        if (curr_code < (int)dict.size()) {
+            curr = dict[curr_code];
+        }
+        else {
+            curr = prev + prev[0];
+        }
+
+        res += curr;
+        dict.push_back(prev + curr[0]);
+        prev = curr;
+    }
+
+    return res;
+}
+
 CompressionResult litvinova_compress(const string& input) {
     
     return CompressionResult{};
