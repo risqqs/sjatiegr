@@ -48,14 +48,19 @@ CompressionResult doni_compress(const string& input) {
     auto end_time = chrono::high_resolution_clock::now();
     auto compression_time = chrono::duration_cast<chrono::milliseconds>(end_time - start_time);
 
+    auto decomp_start = chrono::high_resolution_clock::now();
+    string decompressed = doni_decompress(compressed_data);
+    auto decomp_end = chrono::high_resolution_clock::now();
+    auto decompression_time = chrono::duration_cast<chrono::milliseconds>(decomp_end - decomp_start);
+
     CompressionResult result;
     result.algorithm_name = "RLE String Compression";
     result.original_size = input.size();
     result.compressed_size = compressed_data.size();
     result.compression_ratio = compressed_data.empty() ? 1.0 : (double)input.size() / compressed_data.size();
     result.compression_time_ms = compression_time.count();
-    result.decompression_time_ms = 0;
-    result.integrity_ok = false;
+    result.decompression_time_ms = decompression_time.count();
+    result.integrity_ok = (input == decompressed);
 
     return result;
 }
