@@ -59,3 +59,40 @@ CompressionResult doni_compress(const string& input) {
 
     return result;
 }
+
+string doni_decompress(const string& compressed) {
+    string decompressed_data;
+
+    if (compressed.empty()) {
+        return "";
+    }
+
+    stringstream ss(compressed);
+    string token;
+
+    while (ss >> token) {
+        size_t separator_pos = token.find('|');
+        if (separator_pos != string::npos) {
+            try {
+                int count = stoi(token.substr(0, separator_pos));
+                string word = token.substr(separator_pos + 1);
+
+                for (int i = 0; i < count; i++) {
+                    decompressed_data += word + " ";
+                }
+            }
+            catch (...) {
+                decompressed_data += token + " ";
+            }
+        }
+        else {
+            decompressed_data += token + " ";
+        }
+    }
+
+    if (!decompressed_data.empty() && decompressed_data.back() == ' ') {
+        decompressed_data.pop_back();
+    }
+
+    return decompressed_data;
+}
