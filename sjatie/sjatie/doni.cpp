@@ -57,7 +57,8 @@ CompressionResult doni_compress(const string& input) {
     result.algorithm_name = "RLE String Compression";
     result.original_size = input.size();
     result.compressed_size = compressed_data.size();
-    result.compression_ratio = compressed_data.empty() ? 1.0 : (double)input.size() / compressed_data.size();
+    result.compression_ratio = (input.size() > 0 && compressed_data.size() > 0) ?
+        (double)input.size() / compressed_data.size() : 1.0;
     result.compression_time_ms = compression_time.count();
     result.decompression_time_ms = decompression_time.count();
     result.integrity_ok = (input == decompressed);
@@ -66,12 +67,11 @@ CompressionResult doni_compress(const string& input) {
 }
 
 string doni_decompress(const string& compressed) {
-    string decompressed_data;
-
     if (compressed.empty()) {
         return "";
     }
 
+    string decompressed_data;
     stringstream ss(compressed);
     string token;
 

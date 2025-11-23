@@ -7,14 +7,11 @@
 #include <sstream>
 #include <chrono>
 
-// Предварительное объявление функции распаковки
-std::string kolesnikov_decompress(const std::string& compressed);
-
 // Структура для узла дерева Хаффмана
 struct HuffmanNode {
     char data;
     int freq;
-    HuffmanNode *left, *right;
+    HuffmanNode* left, * right;
 
     HuffmanNode(char data, int freq) {
         left = right = nullptr;
@@ -126,7 +123,9 @@ CompressionResult kolesnikov_compress(const std::string& input) {
     result.algorithm_name = "Huffman (Kolesnikov)";
     result.original_size = input.size();
     result.compressed_size = compressed_data.size();
-    result.compression_ratio = (input.size() > 0) ? (double)compressed_data.size() / input.size() : 1.0;
+    // ИСПРАВЛЕНИЕ: единый формат вычисления коэффициента сжатия
+    result.compression_ratio = (input.size() > 0 && compressed_data.size() > 0) ?
+        (double)input.size() / compressed_data.size() : 1.0;
     result.compression_time_ms = compression_time.count();
     result.decompression_time_ms = decompression_time.count();
     result.integrity_ok = (input == decompressed);
@@ -139,21 +138,29 @@ std::string kolesnikov_decompress(const std::string& compressed) {
     if (compressed.empty()) {
         return "";
     }
-    
+
     std::stringstream ss(compressed);
     std::string freq_part;
     std::getline(ss, freq_part, '|');
-    
+
     // 1. Десериализация таблицы частот
     std::stringstream freq_stream(freq_part);
     int freq_count;
     freq_stream >> freq_count;
-    
+
     std::map<char, int> freq;
     for (int i = 0; i < freq_count; ++i) {
-        char separator, ch, comma;
+        char separator, ch;
         int f;
-        freq_stream >> separator >> ch >> comma >> f;
+        // ИСПРАВЛЕНИЕ: правильное чтение формата char,freq
+        if (freq_stream.peek() == ';') {
+            freq_stream.get(); // пропускаем ';'
+        }
+        freq_stream.get(ch); // читаем символ
+        if (freq_stream.peek() == ',') {
+            freq_stream.get(); // пропускаем ','
+        }
+        freq_stream >> f;
         freq[ch] = f;
     }
 
@@ -166,13 +173,14 @@ std::string kolesnikov_decompress(const std::string& compressed) {
     // 3. Декодирование остальной части строки
     std::string encoded_data;
     std::getline(ss, encoded_data);
-    
+
     std::string decoded_string;
     HuffmanNode* current = root;
     for (char bit : encoded_data) {
         if (bit == '0') {
             current = current->left;
-        } else {
+        }
+        else {
             current = current->right;
         }
 
@@ -181,7 +189,7 @@ std::string kolesnikov_decompress(const std::string& compressed) {
             current = root;
         }
     }
-    
+
     delete root; // Очистка памяти
 
     return decoded_string;

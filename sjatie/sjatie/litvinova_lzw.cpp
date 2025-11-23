@@ -1,5 +1,4 @@
 #include "CompressionAlgorithms.h"
-
 #include <unordered_map>
 #include <sstream>
 #include <vector>
@@ -8,6 +7,8 @@
 using namespace std;
 
 string lzw_compress_str(const string& s) {
+    if (s.empty()) return "";
+
     unordered_map<string, int> dict;
     int code = 256;
 
@@ -20,7 +21,7 @@ string lzw_compress_str(const string& s) {
 
     for (char c : s) {
         string wc = w + c;
-        if (dict.count(wc)) {
+        if (dict.find(wc) != dict.end()) {
             w = wc;
         }
         else {
@@ -38,6 +39,8 @@ string lzw_compress_str(const string& s) {
 }
 
 string lzw_decompress_str(const string& compressed) {
+    if (compressed.empty()) return "";
+
     stringstream ss(compressed);
     vector<int> codes;
     int num;
@@ -45,29 +48,34 @@ string lzw_decompress_str(const string& compressed) {
         codes.push_back(num);
     }
 
+    if (codes.empty()) return "";
+
     vector<string> dict(256);
     for (int i = 0; i < 256; i++) {
         dict[i] = string(1, (char)i);
     }
-
-    if (codes.empty()) return "";
 
     string res = dict[codes[0]];
     string prev = dict[codes[0]];
 
     for (size_t i = 1; i < codes.size(); i++) {
         int curr_code = codes[i];
-
         string curr;
+
         if (curr_code < (int)dict.size()) {
             curr = dict[curr_code];
         }
-        else {
+        else if (curr_code == (int)dict.size()) {
             curr = prev + prev[0];
+        }
+        else {
+            break;
         }
 
         res += curr;
-        dict.push_back(prev + curr[0]);
+        if (dict.size() < 4096) {
+            dict.push_back(prev + curr[0]);
+        }
         prev = curr;
     }
 
@@ -89,7 +97,8 @@ CompressionResult litvinova_compress(const string& input) {
     r.algorithm_name = "LZW";
     r.original_size = input.size();
     r.compressed_size = compressed.size();
-    r.compression_ratio = compressed.empty() ? 0.0 : (double)input.size() / compressed.size();
+    r.compression_ratio = (input.size() > 0 && compressed.size() > 0) ?
+        (double)input.size() / compressed.size() : 1.0;
     r.compression_time_ms = comp_time.count();
     r.decompression_time_ms = decomp_time.count();
     r.integrity_ok = (input == decompressed);
@@ -98,6 +107,5 @@ CompressionResult litvinova_compress(const string& input) {
 }
 
 string litvinova_decompress(const string& compressed) {
-    
     return lzw_decompress_str(compressed);
 }
