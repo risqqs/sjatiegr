@@ -5,15 +5,18 @@
 
 using namespace std;
 
+// Структура для хранения символа и его вероятностного диапазона
 struct SymbolRange {
     char symbol;
     double range_start;
     double range_end;
 };
 
+// Функция подсчета вероятностей и диапазонов через list
 list<SymbolRange> calculateProbabilities(const string& message) {
     list<pair<char, int>> counts;
 
+    // Подсчет количества каждого символа
     for (char c : message) {
         auto it = find_if(counts.begin(), counts.end(),
             c{ return p.first == c; });
@@ -30,6 +33,7 @@ list<SymbolRange> calculateProbabilities(const string& message) {
     list<SymbolRange> probabilities;
     double cumulative = 0.0;
 
+    // Вычисляем диапазоны для каждого символа
     for (auto& kv : counts) {
         double prob = static_cast<double>(kv.second) / total;
         probabilities.push_back({ kv.first, cumulative, cumulative + prob });
@@ -39,6 +43,30 @@ list<SymbolRange> calculateProbabilities(const string& message) {
     return probabilities;
 }
 
+// Функция для поиска диапазона символа
+pair<double, double> findRange(const list<SymbolRange>& probabilities, char symbol) {
+    for (const auto& sr : probabilities) {
+        if (sr.symbol == symbol) {
+            return { sr.range_start, sr.range_end };
+        }
+    }
+    // Если символ не найден, возвращаем нулевой диапазон
+    return { 0.0, 0.0 };
+}
+
+// Функция для сжатия
+double arithmeticEncode(const string& message, const list<SymbolRange>& probabilities) {
+    double low = 0.0;
+    double high = 1.0;
+
+    for (char symbol : message) {
+        auto range = findRange(probabilities, symbol);
+        double range_width = high - low;
+        high = low + range_width * range.second;
+        low = low + range_width * range.first;
+    }
+    return (low + high) / 2;
+}
 
 int main() {
     string message;
@@ -46,6 +74,7 @@ int main() {
     cout << "Введите строку для кодирования: ";
     getline(cin, message);
 
+    // Подсчет вероятностей и диапазонов
     auto probabilities = calculateProbabilities(message);
 
     cout << "\nВероятности символов:\n";
@@ -53,6 +82,9 @@ int main() {
         cout << "'" << sr.symbol << "': [" << sr.range_start << ", " << sr.range_end << ")\n";
     }
 
+    // Сжатие
+    double code = arithmeticEncode(message, probabilities);
+    cout << "\nЗакодированное число: " << code << endl;
 
     return 0;
 }
