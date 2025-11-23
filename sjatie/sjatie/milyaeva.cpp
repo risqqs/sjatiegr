@@ -68,6 +68,25 @@ double arithmeticEncode(const string& message, const list<SymbolRange>& probabil
     return (low + high) / 2;
 }
 
+// Функция для распаковки
+string arithmeticDecode(double code, size_t message_length, const list<SymbolRange>& probabilities) {
+    string decoded_message = "";
+    double value = code;
+
+    for (size_t i = 0; i < message_length; ++i) {
+        for (const auto& sr : probabilities) {
+            if (value >= sr.range_start && value < sr.range_end) {
+                decoded_message += sr.symbol;
+                double range_width = sr.range_end - sr.range_start;
+                value = (value - sr.range_start) / range_width;
+                break;
+            }
+        }
+    }
+
+    return decoded_message;
+}
+
 int main() {
     string message;
     setlocale(LC_ALL, "Russian");
@@ -85,6 +104,10 @@ int main() {
     // Сжатие
     double code = arithmeticEncode(message, probabilities);
     cout << "\nЗакодированное число: " << code << endl;
+
+    // Распаковка
+    string decoded_message = arithmeticDecode(code, message.size(), probabilities);
+    cout << "\nДекодированное сообщение: " << decoded_message << endl;
 
     return 0;
 }
