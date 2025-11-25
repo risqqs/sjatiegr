@@ -10,18 +10,14 @@
 
 using namespace std;
 
-// --- Вспомогательные функции для LZW ---
-
-// Преобразование вектора целых (кодов) в бинарную строку
 string codesToBinaryString(const vector<int>& codes, int initialCodeSize) {
     string bitStream = "";
-    int codeSize = initialCodeSize + 1; // Начальный размер кода (9 бит)
-    int dict_size = 258; // 256 (символы) + 2 (Clear и End)
-    int maxCode = (1 << codeSize); // 2^codeSize
+    int codeSize = initialCodeSize + 1;
+    int dict_size = 258;
+    int maxCode = (1 << codeSize);
 
     for (int code : codes) {
         bitStream += bitset<32>(code).to_string().substr(32 - codeSize);
-        // Увеличиваем размер кода, если словарь заполняется
         if (dict_size >= maxCode && maxCode < 65536) {
             codeSize++;
             maxCode = (1 << codeSize);
@@ -29,12 +25,10 @@ string codesToBinaryString(const vector<int>& codes, int initialCodeSize) {
         dict_size++;
     }
 
-    // Дополняем нулями до кратности 8
     while (bitStream.size() % 8 != 0) {
         bitStream += '0';
     }
 
-    // Преобразуем битовую строку в байты
     string byteString;
     for (size_t i = 0; i < bitStream.size(); i += 8) {
         string byte_str = bitStream.substr(i, 8);
@@ -43,19 +37,17 @@ string codesToBinaryString(const vector<int>& codes, int initialCodeSize) {
     return byteString;
 }
 
-// Преобразование бинарной строки (байтов) в вектор целых (кодов)
 vector<int> binaryStringToCodes(const string& binary_str, int initialCodeSize) {
-    // Сначала преобразуем байты в битовую строку
     string bitStream;
     for (unsigned char byte : binary_str) {
         bitStream += bitset<8>(byte).to_string();
     }
 
     vector<int> codes;
-    int codeSize = initialCodeSize + 1; // 9 бит
+    int codeSize = initialCodeSize + 1;
     int bit_pos = 0;
     int maxCode = (1 << codeSize);
-    int dict_size = 258; // 256 (символы) + 2 (Clear и End)
+    int dict_size = 258;
 
     while (bit_pos + codeSize <= bitStream.size()) {
         string code_str = bitStream.substr(bit_pos, codeSize);
@@ -63,7 +55,6 @@ vector<int> binaryStringToCodes(const string& binary_str, int initialCodeSize) {
         codes.push_back(code);
         bit_pos += codeSize;
 
-        // Увеличиваем размер кода, если словарь заполняется
         if (dict_size >= maxCode && maxCode < 65536) {
             codeSize++;
             maxCode = (1 << codeSize);
@@ -73,7 +64,6 @@ vector<int> binaryStringToCodes(const string& binary_str, int initialCodeSize) {
     return codes;
 }
 
-
 string lzw_compress_binary(const string& s) {
     if (s.empty()) return "";
 
@@ -81,10 +71,9 @@ string lzw_compress_binary(const string& s) {
     const int END_CODE = 257;
 
     unordered_map<string, int> dict;
-    int dict_size = 258; // 256 (символы) + 2 (Clear и End)
-    int code_size = 9; // Начальный размер кода 9 бит
+    int dict_size = 258;
+    int code_size = 9;
 
-    // Инициализация словаря (0-255) и специальных кодов
     for (int i = 0; i < 256; i++) {
         dict[string(1, static_cast<char>(i))] = i;
     }
@@ -94,8 +83,6 @@ string lzw_compress_binary(const string& s) {
     string w;
     vector<int> compressed;
 
-    //compressed.push_back(CLEAR_CODE); // Не используем CLEAR в этой простой версии
-
     for (char c : s) {
         string wc = w + c;
         if (dict.find(wc) != dict.end()) {
@@ -103,7 +90,7 @@ string lzw_compress_binary(const string& s) {
         }
         else {
             compressed.push_back(dict[w]);
-            if (dict_size < 65536) { // Максимальный размер словаря
+            if (dict_size < 65536) {
                 dict[wc] = dict_size++;
             }
             w = string(1, c);
@@ -113,29 +100,26 @@ string lzw_compress_binary(const string& s) {
     if (!w.empty()) {
         compressed.push_back(dict[w]);
     }
-    //compressed.push_back(END_CODE); // Не используем END в этой простой версии
 
-    return codesToBinaryString(compressed, 8); // 8 бит для начального размера символа
+    return codesToBinaryString(compressed, 8);
 }
 
 string lzw_decompress_binary(const string& compressed) {
     if (compressed.empty()) return "";
 
-    vector<int> codes = binaryStringToCodes(compressed, 8); // 8 бит для начального размера символа
+    vector<int> codes = binaryStringToCodes(compressed, 8);
     if (codes.empty()) return "";
 
     const int CLEAR_CODE = 256;
     const int END_CODE = 257;
 
-    // Восстановление словаря
-    vector<string> dict(258); // 256 (символы) + 2 (Clear и End)
+    vector<string> dict(258);
     for (int i = 0; i < 256; i++) {
         dict[i] = string(1, static_cast<char>(i));
     }
-    // dict[CLEAR_CODE] и dict[END_CODE] не используются напрямую
 
     int dict_size = 258;
-    int code_size = 9; // Начальный размер кода
+    int code_size = 9;
     int maxCode = (1 << code_size);
 
     if (codes.empty()) return "";
@@ -148,28 +132,24 @@ string lzw_decompress_binary(const string& compressed) {
         string entry;
 
         if (code == CLEAR_CODE) {
-            // Сброс словаря - не реализовано в этой версии
             continue;
         }
         else if (code == END_CODE) {
-            // Конец данных - не реализовано в этой версии
             break;
         }
         else if (code < dict_size) {
             entry = dict[code];
         }
         else if (code == dict_size) {
-            // Специальный случай: entry = current_entry + current_entry[0]
             entry = current_entry + current_entry[0];
         }
         else {
-            // Ошибка
             return "";
         }
 
         result += entry;
 
-        if (dict_size < 65536) { // Максимальный размер словаря
+        if (dict_size < 65536) {
             dict.push_back(current_entry + entry[0]);
             dict_size++;
         }
@@ -181,15 +161,13 @@ string lzw_decompress_binary(const string& compressed) {
     return result;
 }
 
-// Функция распаковки
 string litvinova_decompress(const string& compressed) {
-    if (compressed.empty()) { // Проверка в начале
+    if (compressed.empty()) {
         return "";
     }
     return lzw_decompress_binary(compressed);
 }
 
-// Функция сжатия
 CompressionResult litvinova_compress(const string& input) {
     auto start = chrono::high_resolution_clock::now();
     string compressed = lzw_compress_binary(input);
