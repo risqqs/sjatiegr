@@ -18,14 +18,14 @@ void printResult(const CompressionResult& result) {
     cout << right << setw(10) << result.original_size;
     cout << right << setw(10) << result.compressed_size;
     cout << right << setw(12) << fixed << setprecision(2) << result.compression_ratio;
-    cout << right << setw(10) << static_cast<int>(result.compression_time_ms);
-    cout << right << setw(10) << static_cast<int>(result.decompression_time_ms);
+    cout << right << setw(15) << fixed << setprecision(3) << result.compression_time_ms;
+    cout << right << setw(15) << fixed << setprecision(3) << result.decompression_time_ms;
     cout << right << setw(10) << (result.integrity_ok ? "PASS" : "FAIL");
     cout << endl;
 }
 
 int main() {
-    string filename = "data1.txt";
+    string filename = "data6.txt";
     string text = readFile(filename);
 
     cout << "COMPRESSION ALGORITHMS TEST" << endl;
@@ -37,17 +37,17 @@ int main() {
     cout << right << setw(10) << "Original";
     cout << right << setw(10) << "Compressed";
     cout << right << setw(12) << "Ratio";
-    cout << right << setw(10) << "Cmp(ms)";
-    cout << right << setw(10) << "Dec(ms)";
+    cout << right << setw(15) << "Cmp(ms)";
+    cout << right << setw(15) << "Dec(ms)";
     cout << right << setw(10) << "Integrity";
     cout << endl;
 
-    cout << string(87, '-') << endl;
+    cout << string(97, '-') << endl;
 
-    CompressionResult r1 = kolesnikov_compress(text);
-    CompressionResult r2 = litvinova_compress(text);
-    CompressionResult r3 = milyaeva_compress(text);
-    CompressionResult r4 = doni_compress(text);
+    CompressionResult r1 = litvinova_compress(text);
+    CompressionResult r2 = milyaeva_compress(text);
+    CompressionResult r3 = doni_compress(text);
+    CompressionResult r4 = kolesnikov_compress(text);
 
     printResult(r1);
     printResult(r2);
