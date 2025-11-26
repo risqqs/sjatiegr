@@ -52,7 +52,7 @@ LZ77Triple findLongestMatch(const string& input, size_t current_pos, size_t sear
     const size_t LIMITED_SEARCH_SIZE = 2048;
     size_t limited_start = (current_pos > LIMITED_SEARCH_SIZE) ? current_pos - LIMITED_SEARCH_SIZE : 0;
     start_search = max(start_search, limited_start);
-   
+
     for (size_t i = start_search; i < end_search; ++i) {
         size_t len = 0;
         size_t j = i;
@@ -108,12 +108,12 @@ CompressionResult milyaeva_compress(const string& input) {
     }
 
     auto end_time = chrono::high_resolution_clock::now();
-    auto compression_time = chrono::duration_cast<chrono::milliseconds>(end_time - start_time);
+    auto compression_time = chrono::duration_cast<chrono::microseconds>(end_time - start_time);
 
     auto decomp_start = chrono::high_resolution_clock::now();
     string decompressed = milyaeva_decompress(compressed_data);
     auto decomp_end = chrono::high_resolution_clock::now();
-    auto decompression_time = chrono::duration_cast<chrono::milliseconds>(decomp_end - decomp_start);
+    auto decompression_time = chrono::duration_cast<chrono::microseconds>(decomp_end - decomp_start);
 
     CompressionResult result;
     result.algorithm_name = "Simple LZ77";
@@ -121,7 +121,8 @@ CompressionResult milyaeva_compress(const string& input) {
     result.compressed_size = compressed_data.size();
     result.compression_ratio = compressed_data.empty() ? 1.0 : static_cast<double>(input.size()) / compressed_data.size();
     result.compression_time_ms = static_cast<double>(compression_time.count());
-    result.decompression_time_ms = static_cast<double>(decompression_time.count());
+    result.compression_time_ms = static_cast<double>(compression_time.count()) / 1000.0;
+    result.decompression_time_ms = static_cast<double>(decompression_time.count()) / 1000.0;
     result.integrity_ok = (input == decompressed);
 
     return result;
