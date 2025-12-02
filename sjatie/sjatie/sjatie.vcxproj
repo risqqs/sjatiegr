@@ -123,9 +123,14 @@
     </Link>
   </ItemDefinitionGroup>
   <ItemGroup>
+    <ClCompile Include="doni.cpp" />
     <ClCompile Include="kolesnikov.cpp" />
     <ClCompile Include="litvinova.cpp" />
+    <ClCompile Include="milyaeva.cpp" />
     <ClCompile Include="sjatie.cpp" />
+  </ItemGroup>
+  <ItemGroup>
+    <ClInclude Include="CompressionAlgorithms.h" />
   </ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
   <ImportGroup Label="ExtensionTargets">

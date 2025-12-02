@@ -6,47 +6,36 @@
 #include <queue>
 #include <sstream>
 #include <chrono>
+#include <bitset>
 
-// Предварительное объявление функции распаковки
-std::string kolesnikov_decompress(const std::string& compressed);
-
-// Структура для узла дерева Хаффмана
 struct HuffmanNode {
     char data;
     int freq;
-    HuffmanNode *left, *right;
+    HuffmanNode* left;
+    HuffmanNode* right;
 
-    HuffmanNode(char data, int freq) {
-        left = right = nullptr;
-        this->data = data;
-        this->freq = freq;
-    }
-    // Деструктор для очистки памяти
+    HuffmanNode(char data, int freq) : data(data), freq(freq), left(nullptr), right(nullptr) {}
     ~HuffmanNode() {
         delete left;
         delete right;
     }
 };
 
-// Структура для сравнения в очереди с приоритетом
 struct compare {
     bool operator()(HuffmanNode* l, HuffmanNode* r) {
-        return (l->freq > r->freq);
+        return l->freq > r->freq;
     }
 };
 
-// Функция для построения дерева Хаффмана
 HuffmanNode* buildHuffmanTree(const std::map<char, int>& freq) {
+    if (freq.empty()) return nullptr;
+
     std::priority_queue<HuffmanNode*, std::vector<HuffmanNode*>, compare> minHeap;
-    for (auto pair : freq) {
+    for (const auto& pair : freq) {
         minHeap.push(new HuffmanNode(pair.first, pair.second));
     }
 
-    if (minHeap.empty()) {
-        return nullptr;
-    }
-
-    while (minHeap.size() != 1) {
+    while (minHeap.size() > 1) {
         HuffmanNode* left = minHeap.top(); minHeap.pop();
         HuffmanNode* right = minHeap.top(); minHeap.pop();
 
@@ -58,7 +47,6 @@ HuffmanNode* buildHuffmanTree(const std::map<char, int>& freq) {
     return minHeap.top();
 }
 
-// Функция для генерации кодов Хаффмана
 void generateHuffmanCodes(HuffmanNode* root, std::string str, std::map<char, std::string>& huffmanCode) {
     if (!root) return;
     if (root->data != '$') {
@@ -68,7 +56,81 @@ void generateHuffmanCodes(HuffmanNode* root, std::string str, std::map<char, std
     generateHuffmanCodes(root->right, str + "1", huffmanCode);
 }
 
-// Функция сжатия
+std::string bitsToBytes(const std::string& bits) {
+    std::string bytes;
+    for (size_t i = 0; i < bits.size(); i += 8) {
+        std::string byte = bits.substr(i, 8);
+        while (byte.size() < 8) byte += "0";
+        bytes += static_cast<char>(std::bitset<8>(byte).to_ulong());
+    }
+    return bytes;
+}
+
+std::string bytesToBits(const std::string& bytes, size_t originalBitLength) {
+    std::string bits;
+    for (unsigned char byte : bytes) {
+        bits += std::bitset<8>(byte).to_string();
+    }
+    return bits.substr(0, originalBitLength);
+}
+
+std::string kolesnikov_decompress(const std::string& compressed) {
+    if (compressed.empty()) {
+        return "";
+    }
+
+    size_t pos = 0;
+
+    if (pos >= compressed.size()) return "";
+    unsigned char freq_count = static_cast<unsigned char>(compressed[pos++]);
+
+    std::map<char, int> freq;
+    for (int i = 0; i < freq_count; ++i) {
+        if (pos + 4 > compressed.size()) return "";
+        char ch = compressed[pos++];
+        uint32_t freq_val = (static_cast<unsigned char>(compressed[pos]) << 24) |
+            (static_cast<unsigned char>(compressed[pos + 1]) << 16) |
+            (static_cast<unsigned char>(compressed[pos + 2]) << 8) |
+            static_cast<unsigned char>(compressed[pos + 3]);
+        pos += 4;
+        freq[ch] = freq_val;
+    }
+
+    if (pos + 4 > compressed.size()) return "";
+    uint32_t bit_length = (static_cast<unsigned char>(compressed[pos]) << 24) |
+        (static_cast<unsigned char>(compressed[pos + 1]) << 16) |
+        (static_cast<unsigned char>(compressed[pos + 2]) << 8) |
+        static_cast<unsigned char>(compressed[pos + 3]);
+    pos += 4;
+
+    HuffmanNode* root = buildHuffmanTree(freq);
+    if (!root) {
+        return "";
+    }
+
+    std::string encoded_data = compressed.substr(pos);
+    std::string bits = bytesToBits(encoded_data, bit_length);
+
+    std::string decoded_string;
+    HuffmanNode* current = root;
+    for (char bit : bits) {
+        if (bit == '0') {
+            current = current->left;
+        }
+        else {
+            current = current->right;
+        }
+
+        if (current && current->left == nullptr && current->right == nullptr) {
+            decoded_string += current->data;
+            current = root;
+        }
+    }
+
+    delete root;
+    return decoded_string;
+}
+
 CompressionResult kolesnikov_compress(const std::string& input) {
     auto start_time = std::chrono::high_resolution_clock::now();
 
@@ -84,105 +146,72 @@ CompressionResult kolesnikov_compress(const std::string& input) {
         return result;
     }
 
-    // 1. Подсчет частот
     std::map<char, int> freq;
     for (char c : input) {
         freq[c]++;
     }
 
-    // 2. Построение дерева Хаффмана
     HuffmanNode* root = buildHuffmanTree(freq);
+    if (!root) {
+        CompressionResult result;
+        result.algorithm_name = "Huffman (Kolesnikov)";
+        result.original_size = input.size();
+        result.compressed_size = 0;
+        result.compression_ratio = 0.0;
+        result.compression_time_ms = 0;
+        result.decompression_time_ms = 0;
+        result.integrity_ok = false;
+        return result;
+    }
 
-    // 3. Генерация кодов
     std::map<char, std::string> huffmanCode;
     generateHuffmanCodes(root, "", huffmanCode);
 
-    // 4. Сериализация таблицы частот
-    std::stringstream serialized_data;
-    serialized_data << freq.size();
-    for (auto const& [key, val] : freq) {
-        serialized_data << ';' << key << ',' << val;
-    }
-    serialized_data << '|';
-
-    // 5. Кодирование входной строки
+    std::string encoded_bits;
     for (char c : input) {
-        serialized_data << huffmanCode[c];
+        encoded_bits += huffmanCode[c];
     }
-    std::string compressed_data = serialized_data.str();
+
+    std::ostringstream header;
+    header << static_cast<char>(freq.size());
+
+    for (const auto& p : freq) {
+        header << p.first;
+        uint32_t freq_val = p.second;
+        header << static_cast<char>((freq_val >> 24) & 0xFF);
+        header << static_cast<char>((freq_val >> 16) & 0xFF);
+        header << static_cast<char>((freq_val >> 8) & 0xFF);
+        header << static_cast<char>(freq_val & 0xFF);
+    }
+
+    uint32_t bit_length = static_cast<uint32_t>(encoded_bits.size());
+    header << static_cast<char>((bit_length >> 24) & 0xFF);
+    header << static_cast<char>((bit_length >> 16) & 0xFF);
+    header << static_cast<char>((bit_length >> 8) & 0xFF);
+    header << static_cast<char>(bit_length & 0xFF);
+
+    std::string header_str = header.str();
+    std::string compressed_bits = bitsToBytes(encoded_bits);
+    std::string compressed_data = header_str + compressed_bits;
 
     auto end_time = std::chrono::high_resolution_clock::now();
-    auto compression_time = std::chrono::duration_cast<std::chrono::milliseconds>(end_time - start_time);
+    auto compression_time = std::chrono::duration_cast<std::chrono::microseconds>(end_time - start_time);
 
-    // Тест распаковки
     auto decomp_start = std::chrono::high_resolution_clock::now();
     std::string decompressed = kolesnikov_decompress(compressed_data);
     auto decomp_end = std::chrono::high_resolution_clock::now();
-    auto decompression_time = std::chrono::duration_cast<std::chrono::milliseconds>(decomp_end - decomp_start);
+    auto decompression_time = std::chrono::duration_cast<std::chrono::microseconds>(decomp_end - decomp_start);
 
-    delete root; // Очистка памяти
+    delete root;
 
     CompressionResult result;
     result.algorithm_name = "Huffman (Kolesnikov)";
     result.original_size = input.size();
     result.compressed_size = compressed_data.size();
-    result.compression_ratio = (input.size() > 0) ? (double)compressed_data.size() / input.size() : 1.0;
-    result.compression_time_ms = compression_time.count();
-    result.decompression_time_ms = decompression_time.count();
+    result.compression_ratio = (input.size() > 0) ? static_cast<double>(input.size()) / compressed_data.size() : 1.0;
+    result.compression_time_ms = static_cast<double>(compression_time.count()) / 1000.0;
+    result.decompression_time_ms = static_cast<double>(decompression_time.count()) / 1000.0;
     result.integrity_ok = (input == decompressed);
 
     return result;
-}
-
-// Функция распаковки
-std::string kolesnikov_decompress(const std::string& compressed) {
-    if (compressed.empty()) {
-        return "";
-    }
-    
-    std::stringstream ss(compressed);
-    std::string freq_part;
-    std::getline(ss, freq_part, '|');
-    
-    // 1. Десериализация таблицы частот
-    std::stringstream freq_stream(freq_part);
-    int freq_count;
-    freq_stream >> freq_count;
-    
-    std::map<char, int> freq;
-    for (int i = 0; i < freq_count; ++i) {
-        char separator, ch, comma;
-        int f;
-        freq_stream >> separator >> ch >> comma >> f;
-        freq[ch] = f;
-    }
-
-    // 2. Восстановление дерева Хаффмана
-    HuffmanNode* root = buildHuffmanTree(freq);
-    if (!root) {
-        return "";
-    }
-
-    // 3. Декодирование остальной части строки
-    std::string encoded_data;
-    std::getline(ss, encoded_data);
-    
-    std::string decoded_string;
-    HuffmanNode* current = root;
-    for (char bit : encoded_data) {
-        if (bit == '0') {
-            current = current->left;
-        } else {
-            current = current->right;
-        }
-
-        if (current && current->left == nullptr && current->right == nullptr) {
-            decoded_string += current->data;
-            current = root;
-        }
-    }
-    
-    delete root; // Очистка памяти
-
-    return decoded_string;
 }
