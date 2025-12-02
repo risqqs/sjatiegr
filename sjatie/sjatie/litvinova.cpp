@@ -13,8 +13,8 @@ using namespace std;
 string codesToBinaryString(const vector<int>& codes, int initialCodeSize) {
     string bitStream = "";
     int codeSize = initialCodeSize + 1;
-    int dict_size = 258;
-    int maxCode = (1 << codeSize);
+    int dict_size = 256; 
+    int maxCode = (1 << codeSize); 
 
     for (int code : codes) {
         bitStream += bitset<32>(code).to_string().substr(32 - codeSize);
@@ -44,10 +44,10 @@ vector<int> binaryStringToCodes(const string& binary_str, int initialCodeSize) {
     }
 
     vector<int> codes;
-    int codeSize = initialCodeSize + 1;
+    int codeSize = initialCodeSize + 1; 
     int bit_pos = 0;
     int maxCode = (1 << codeSize);
-    int dict_size = 258;
+    int dict_size = 256; 
 
     while (bit_pos + codeSize <= bitStream.size()) {
         string code_str = bitStream.substr(bit_pos, codeSize);
@@ -67,18 +67,12 @@ vector<int> binaryStringToCodes(const string& binary_str, int initialCodeSize) {
 string lzw_compress_binary(const string& s) {
     if (s.empty()) return "";
 
-    const int CLEAR_CODE = 256;
-    const int END_CODE = 257;
-
     unordered_map<string, int> dict;
-    int dict_size = 258;
-    int code_size = 9;
+    int dict_size = 256; 
 
     for (int i = 0; i < 256; i++) {
         dict[string(1, static_cast<char>(i))] = i;
     }
-    dict["CLEAR"] = CLEAR_CODE;
-    dict["END"] = END_CODE;
 
     string w;
     vector<int> compressed;
@@ -110,17 +104,12 @@ string lzw_decompress_binary(const string& compressed) {
     vector<int> codes = binaryStringToCodes(compressed, 8);
     if (codes.empty()) return "";
 
-    const int CLEAR_CODE = 256;
-    const int END_CODE = 257;
-
-    vector<string> dict(258);
+    vector<string> dict(256);
     for (int i = 0; i < 256; i++) {
         dict[i] = string(1, static_cast<char>(i));
     }
 
-    int dict_size = 258;
-    int code_size = 9;
-    int maxCode = (1 << code_size);
+    int dict_size = 256;
 
     if (codes.empty()) return "";
     int old_code = codes[0];
@@ -131,13 +120,7 @@ string lzw_decompress_binary(const string& compressed) {
         int code = codes[i];
         string entry;
 
-        if (code == CLEAR_CODE) {
-            continue;
-        }
-        else if (code == END_CODE) {
-            break;
-        }
-        else if (code < dict_size) {
+        if (code < dict_size) {
             entry = dict[code];
         }
         else if (code == dict_size) {
